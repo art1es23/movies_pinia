@@ -1,31 +1,50 @@
 import { defineStore } from "pinia";
+import { ref, computed, watch } from "vue";
 
-export const useMovieStore = defineStore("movieStore", {
-  state: () => ({
-    movies: [],
+console.log("Its another branch, so its complicated variant!");
+// Composition API
+export const useMovieStore = defineStore("movieStore", () => {
+  const movies = ref([]);
+  const activeTab = ref(2);
 
-    activeTab: 1,
-  }),
+  const moviesInLocalStorage = localStorage.getItem("movies");
 
-  getters: {
-    watchedMovies() {
-      return this.movies.filter((mv) => mv.isWatched);
+  if (moviesInLocalStorage) {
+    movies.value = JSON.parse(moviesInLocalStorage)._value;
+  }
+
+  const watchedMovies = computed(() =>
+    movies.value.filter((mv) => mv.isWatched)
+  );
+
+  const setActiveTab = (id) => {
+    activeTab.value = id;
+  };
+
+  const toggleWatched = (id) => {
+    const idx = movies.value.findIndex((mv) => mv.id === id);
+
+    movies.value[idx].isWatched = !movies.value[idx].isWatched;
+  };
+
+  const removeMovie = (id) => {
+    movies.value = movies.value.filter((mv) => mv.id !== id);
+  };
+
+  watch(
+    () => movies,
+    (state) => {
+      localStorage.setItem("movies", JSON.stringify(state));
     },
-  },
+    { deep: true }
+  );
 
-  actions: {
-    setActiveTab(id) {
-      this.activeTab = id;
-    },
-
-    toggleWatched(id) {
-      const idx = this.movies.findIndex((mv) => mv.id === id);
-
-      this.movies[idx].isWatched = !this.movies[idx].isWatched;
-    },
-
-    removeMovie(id) {
-      this.movies = this.movies.filter((mv) => mv.id !== id);
-    },
-  },
+  return {
+    movies,
+    activeTab,
+    watchedMovies,
+    setActiveTab,
+    toggleWatched,
+    removeMovie,
+  };
 });
